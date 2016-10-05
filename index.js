@@ -19,6 +19,15 @@ function expressCacheOnDemand(hasher) {
 
     patch(res, {
       redirect: function(url) {
+        var status = 302;
+        var url = url;
+
+        if (typeof arguments[0] === 'number') {
+          status = arguments[0];
+          url = arguments[1];
+        }
+
+        _res.redirectStatus = status;
         _res.redirect = url;
         return finish();
       },
@@ -63,7 +72,6 @@ function expressCacheOnDemand(hasher) {
 
   return function(req, res, next) {
     return codForMiddleware(req, res, next, function(_res) {
-
       // Replay the captured response
       if (_res.statusCode) {
         res.statusCode = _res.statusCode;
@@ -72,7 +80,7 @@ function expressCacheOnDemand(hasher) {
         res.setHeader(key, val);
       });
       if (_res.redirect) {
-        return res.redirect(_res.redirect);
+        return res.redirect(_res.redirectStatus, _res.redirect);
       }
       if (_res.body) {
         return res.send(_res.body);
@@ -83,6 +91,8 @@ function expressCacheOnDemand(hasher) {
       // We know about ending a request with one of
       // the above three methods. Anything else doesn't
       // make sense with this middleware
+
+      console.log('Attempted Request URL: ' + req.url);
       throw 'cacheOnDemand.middleware does not know how to deliver this response, use the middleware only with routes that end with res.redirect, res.send or res.end';
     });
   };
